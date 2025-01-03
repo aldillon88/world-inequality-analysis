@@ -17,7 +17,9 @@ cols_to_drop = [
 	'simpledes',
 	'technicaldes',
 	'extrapolation',
-	'data_points'
+	'data_points',
+	'age',
+	'pop'
 ]
 
 # Preload files
@@ -38,11 +40,11 @@ for data_filename in data_files:
 
 		data_path = os.path.join(unprocessed_path, data_filename)
 		meta_path = os.path.join(unprocessed_path, meta_files[country_code])
-		data_df = pd.read_csv(data_path, delimiter=';', usecols=lambda col: col not in cols_to_drop)
-		meta_df = pd.read_csv(meta_path, delimiter=';', usecols=lambda col: col not in ['age', 'pop'])
+		data_df = pd.read_csv(data_path, delimiter=';')
+		meta_df = pd.read_csv(meta_path, delimiter=';', usecols=lambda col: col not in cols_to_drop)
 		merged_df = pd.merge(left=data_df, right=meta_df, on=['country', 'variable'], suffixes=('', '_x'))
 		final_df = merged_df[merged_df['variable'].isin(variables_to_analyze['variable'])]
-		final_df.to_csv(os.path.join(processed_path, f"{country_code}.csv"))
+		final_df.to_csv(os.path.join(processed_path, f"{country_code}.csv"), index=False)
 
 
 print('Task completed successfully.')
