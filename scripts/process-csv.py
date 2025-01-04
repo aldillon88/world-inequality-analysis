@@ -31,13 +31,20 @@ meta_files = {file[13:15]: file for file in files if re.match(pattern=meta_patte
 # Load the list of variables required for the analysis.
 variables_to_analyze = pd.read_csv(f"{folder_path}/reference/variables_to_analyze.csv")
 variables_for_conversion = pd.read_csv(f"{folder_path}/reference/vars_for_currency_conversion.csv")
+variables_for_conversion_avg = pd.read_csv(f"{folder_path}/reference/vars_for_currency_conversion_avg.csv")
+variables_for_conversion_total = pd.read_csv(f"{folder_path}/reference/vars_for_currency_conversion_total.csv")
+
+print('Are all variables from total csv in aggregate csv?')
+print(np.all(np.isin(variables_for_conversion_total['variable'], variables_for_conversion['variable'])))
+print('Are all variables from avg csv in aggregate csv?')
+print(np.all(np.isin(variables_for_conversion_avg['variable'], variables_for_conversion['variable'])))
 
 for data_filename in data_files:
 
 	# Isolate the country code for each file, eg. US.
 	country_code = data_filename[9:11]
 
-	if country_code in meta_files:
+	if country_code in meta_files and country_code == 'US':
 
 		data_path = os.path.join(unprocessed_path, data_filename)
 		meta_path = os.path.join(unprocessed_path, meta_files[country_code])
@@ -53,21 +60,25 @@ for data_filename in data_files:
 			# Create a mapping from 'year' to 'local_currency_per_usd' / 'ppp_conversion_factor_usd'
 			ppp = filtered_df[filtered_df['variable'] == 'xlcuspi999'][['year', 'value']].copy()
 			fx = filtered_df[filtered_df['variable'] == 'xlcusxi999'][['year', 'value']].copy()
+			population = filtered_df[filtered_df['variable'] == 'npopuli999'][['year', 'value']].copy()
 			ppp_map = ppp.set_index('year')['value'].to_dict()
 			fx_map = fx.set_index('year')['value'].to_dict()
+			population_map = population.set_index('year')['value'].to_dict()
 
 			# Add columns for converted values - PPP and USD
 			filtered_df.loc[:, 'value_usd'] = np.where(
 				filtered_df['variable'].isin(variables_for_conversion['variable']),
 				filtered_df['value'] / filtered_df['year'].map(fx_map),
-				filtered_df['value']
+				None
 			)
 
 			filtered_df.loc[:, 'value_ppp'] = np.where(
 				filtered_df['variable'].isin(variables_for_conversion['variable']),
-				filtered_df['value'] / filtered_df['year'].map(fx_map),
-				filtered_df['value']
+				filtered_df['value'] / filtered_df['year'].map(ppp_map),
+				None
 			)
+
+			# 
 
 			filtered_df.to_csv(os.path.join(processed_path, f"{country_code}.csv"), index=False)
 
