@@ -59,11 +59,13 @@ for data_filename in data_files:
 
 			# Create a mapping from 'year' to 'local_currency_per_usd' / 'ppp_conversion_factor_usd'
 			ppp = filtered_df[filtered_df['variable'] == 'xlcuspi999'][['year', 'value']].copy()
-			fx = filtered_df[filtered_df['variable'] == 'xlcusxi999'][['year', 'value']].copy()
-			population = filtered_df[filtered_df['variable'] == 'npopuli999'][['year', 'value']].copy()
 			ppp_map = ppp.set_index('year')['value'].to_dict()
+			fx = filtered_df[filtered_df['variable'] == 'xlcusxi999'][['year', 'value']].copy()
 			fx_map = fx.set_index('year')['value'].to_dict()
-			population_map = population.set_index('year')['value'].to_dict()
+
+			# Create a mapping to add per capita values to the rows containing totals (in currency only).
+			
+			
 
 			# Add columns for converted values - PPP and USD
 			filtered_df.loc[:, 'value_usd'] = np.where(
