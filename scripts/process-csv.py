@@ -27,7 +27,8 @@ cols_to_drop = [
 	'pop',
 	'longtype',
 	'longpop',
-	'longage'
+	'longage',
+	'percentile'
 ]
 
 # Preload files
@@ -45,78 +46,89 @@ region_map = region_data['region'].to_dict()
 subregion_map = region_data['region2'].to_dict()
 
 with open(f"{folder_path}/reference/public_spending_vars.json", 'r') as file:
-    public_spending_vars = json.load(file)
+	public_spending_vars = json.load(file)
 
 public_spending_total = public_spending_vars['Total']
 public_spending_per_capita = public_spending_vars['Average']
 public_spending_pct_of_income = public_spending_vars['Wealth-income ratio']
-ps_pc_pct_combined = public_spending_per_capita + public_spending_pct_of_income
+ps_pc_pct_combined = public_spending_per_capita# + public_spending_pct_of_income
 
 total_rows = 0
 
 step1 = 0
 step2 = 0
 step3 = 0
+step4 = 0
 
 for data_filename in data_files:
 	step1 += 1
 	# Isolate the country code for each file, eg. US.
 	country_code = data_filename[9:11]
 
-	if country_code in meta_files:# and country_code == 'AD':
+	if country_code in meta_files:# and country_code in ['AD', 'RS', 'US']:
 		step2 += 1
 
 		data_path = os.path.join(unprocessed_path, data_filename)
 		meta_path = os.path.join(unprocessed_path, meta_files[country_code])
 		data_df = pd.read_csv(data_path, delimiter=';')
 		meta_df = pd.read_csv(meta_path, delimiter=';', usecols=lambda col: col not in cols_to_drop)
-		merged_df = pd.merge(left=data_df, right=meta_df, on=['country', 'variable'], suffixes=('', '_x'))
 
-		# Filter by variables required for the analysis.
-		filtered_df = merged_df[merged_df['variable'].isin(variables_to_analyze['variable'])].copy()
-
-		# Add region data.
-		
-
-		if filtered_df.shape[0] > 0:
+		if not meta_df.empty:
 			step3 += 1
+			merged_df = pd.merge(left=data_df, right=meta_df, on=['country', 'variable'], suffixes=('', '_x'))
 
-			# Create a mapping from 'year' to 'local_currency_per_usd' / 'ppp_conversion_factor_usd'
-			ppp = filtered_df[filtered_df['variable'] == 'xlcuspi999'][['year', 'value']].copy()
-			ppp_map = ppp.set_index('year')['value'].to_dict()
-			fx = filtered_df[filtered_df['variable'] == 'xlcusxi999'][['year', 'value']].copy()
-			fx_map = fx.set_index('year')['value'].to_dict()
+			# Filter by variables required for the analysis.
+			filtered_df = merged_df[merged_df['variable'].isin(variables_to_analyze['variable'])].copy()
 
-			# Add columns for converted values - PPP and USD
-			filtered_df.loc[:, 'value_usd'] = np.where(
-				filtered_df['variable'].isin(variables_for_conversion['variable']),
-				filtered_df['value'] / filtered_df['year'].map(fx_map),
-				None
-			)
+			if filtered_df.shape[0] > 0:
+				step4 += 1
 
-			filtered_df.loc[:, 'value_ppp'] = np.where(
-				filtered_df['variable'].isin(variables_for_conversion['variable']),
-				filtered_df['value'] / filtered_df['year'].map(ppp_map),
-				None
-			)
+				# Create a mapping from 'year' to 'local_currency_per_usd' / 'ppp_conversion_factor_usd'
+				ppp = filtered_df[filtered_df['variable'] == 'xlcuspi999'][['year', 'value']].copy()
+				ppp_map = ppp.set_index('year')['value'].to_dict()
+				fx = filtered_df[filtered_df['variable'] == 'xlcusxi999'][['year', 'value']].copy()
+				fx_map = fx.set_index('year')['value'].to_dict()
 
-			filtered_df['region'] = filtered_df['country'].map(region_map)
-			filtered_df['subregion'] = filtered_df['country'].map(subregion_map)
+				# Add columns for converted values - PPP and USD
+				filtered_df.loc[:, 'value_usd'] = np.where(
+					filtered_df['variable'].isin(variables_for_conversion['variable']),
+					filtered_df['value'] / filtered_df['year'].map(fx_map),
+					None
+				)
 
-			# Create a mapping to add per capita values to the rows containing totals (in currency only).
-			per_capita = filtered_df[filtered_df['variable'].isin(public_spending_per_capita)][['year', 'shortname', 'shortage', 'value_usd']]
-			per_capita_map = per_capita.set_index(['year', 'shortname', 'shortage'])['value_usd'].to_dict()
+				filtered_df.loc[:, 'value_ppp'] = np.where(
+					filtered_df['variable'].isin(variables_for_conversion['variable']),
+					filtered_df['value'] / filtered_df['year'].map(ppp_map),
+					None
+				)
 
-			filtered_df['key'] = list(zip(filtered_df['year'], filtered_df['shortname'], filtered_df['shortage']))
-			filtered_df['value_usd_per_capita'] = filtered_df['key'].map(per_capita_map).where(
-				filtered_df['variable'].isin(public_spending_total)
-			)
+				filtered_df['region'] = filtered_df['country'].map(region_map)
+				filtered_df['subregion'] = filtered_df['country'].map(subregion_map)
 
-			filtered_df_trimmed = filtered_df[~filtered_df['variable'].isin(ps_pc_pct_combined)].drop(columns=['key'])
-			
-			filtered_df_trimmed.to_csv(os.path.join(processed_path, f"{country_code}.csv"), index=False)
+				# Create a mapping to add per capita values to the rows containing totals (in currency only).
+				per_capita = filtered_df[filtered_df['variable'].isin(public_spending_per_capita)][['year', 'shortname', 'shortage', 'value_usd']]
+				per_capita_map = per_capita.set_index(['year', 'shortname', 'shortage'])['value_usd'].to_dict()
 
-			total_rows += filtered_df_trimmed.shape[0]
+				filtered_df['key'] = list(zip(filtered_df['year'], filtered_df['shortname'], filtered_df['shortage']))
+				filtered_df['value_usd_per_capita'] = filtered_df['key'].map(per_capita_map).where(
+					filtered_df['variable'].isin(public_spending_total)
+				)
+
+				# Create a mapping to add per capita values to the rows containing totals (in currency only).
+				pct_of_income = filtered_df[filtered_df['variable'].isin(public_spending_pct_of_income)][['year', 'shortname', 'shortage', 'value']]
+				pct_of_income_map = pct_of_income.set_index(['year', 'shortname', 'shortage'])['value'].to_dict()
+
+				filtered_df['key'] = list(zip(filtered_df['year'], filtered_df['shortname'], filtered_df['shortage']))
+				filtered_df['value_pct_national_income'] = filtered_df['key'].map(pct_of_income_map).where(
+					filtered_df['variable'].isin(public_spending_total)
+				)
+
+				filtered_df_trimmed = filtered_df[~filtered_df['variable'].isin(ps_pc_pct_combined)].drop(columns=['key', 'percentile'])
+				
+				filtered_df_trimmed.to_csv(os.path.join(processed_path, f"{country_code}.csv"), index=False)
+
+				total_rows += filtered_df_trimmed.shape[0]
+				
 
 end_time = time.time()
 
@@ -125,4 +137,5 @@ print(f"Total number of rows processed: {total_rows}")
 print(f"No. of countries left after step 1: {step1}")
 print(f"No. of countries left after step 2: {step2}")
 print(f"No. of countries left after step 3: {step3}")
+print(f"No. of countries left after step 4: {step4}")
 print('Task completed successfully.')

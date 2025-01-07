@@ -20,7 +20,6 @@ source_csv_pattern = "^[A-Z]{2}\.csv$"
 expected_cols = [
 	'country',
 	'variable',
-	'percentile',
 	'year',
 	'value',
 	'age',
@@ -37,7 +36,8 @@ expected_cols = [
 	'value_ppp',
 	'region',
 	'subregion',
-    'value_usd_per_capita'
+    'value_usd_per_capita',
+	'value_pct_national_income'
 	]
 
 col_check_set = set()
@@ -67,6 +67,7 @@ for i, file in enumerate(data_files):
 		else:
 			col_check_dict['fail'] += 1
 		col_check_dict['failed_country'].append(file[:2])
+		print(df.columns)
 
 end_time = time.time()
 print(f"Execution time: {end_time - start_time:.4f} seconds")
