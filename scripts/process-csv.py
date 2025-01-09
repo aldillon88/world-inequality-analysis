@@ -80,6 +80,7 @@ for data_filename in data_files:
 
 			# Filter by variables required for the analysis.
 			filtered_df = merged_df[merged_df['variable'].isin(variables_to_analyze['variable'])].copy()
+			filtered_df = filtered_df.apply(lambda x: x.str.strip() if x.dtype == "object" else x)
 
 			if filtered_df.shape[0] > 0:
 				step4 += 1
