@@ -37,11 +37,11 @@ data_files = [file for file in files if re.match(pattern=data_pattern, string=fi
 meta_files = {file[13:15]: file for file in files if re.match(pattern=meta_pattern, string=file)}
 
 # Load the list of variables required for the analysis.
-variables_to_analyze = pd.read_csv(f"{folder_path}/reference/variables_to_analyze.csv")
-variables_for_conversion = pd.read_csv(f"{folder_path}/reference/vars_for_currency_conversion.csv")
+variables_to_analyze = pd.read_csv(f"{folder_path}/reference/variables_to_analyze.csv", keep_default_na=False, na_values=[''])
+variables_for_conversion = pd.read_csv(f"{folder_path}/reference/vars_for_currency_conversion.csv", keep_default_na=False, na_values=[''])
 
 # Load region data for each country.
-region_data = pd.read_csv(f"{folder_path}/reference/WID_countries.csv", delimiter=';', index_col='alpha2')[['region', 'region2']].dropna(subset=['region'])
+region_data = pd.read_csv(f"{folder_path}/reference/WID_countries.csv", delimiter=';', keep_default_na=False, na_values=[''], index_col='alpha2')[['region', 'region2']].dropna(subset=['region'])
 region_map = region_data['region'].to_dict()
 subregion_map = region_data['region2'].to_dict()
 
@@ -51,7 +51,7 @@ with open(f"{folder_path}/reference/public_spending_vars.json", 'r') as file:
 public_spending_total = public_spending_vars['Total']
 public_spending_per_capita = public_spending_vars['Average']
 public_spending_pct_of_income = public_spending_vars['Wealth-income ratio']
-ps_pc_pct_combined = public_spending_per_capita# + public_spending_pct_of_income
+ps_pc_pct_combined = public_spending_per_capita + public_spending_pct_of_income
 
 total_rows = 0
 
@@ -71,8 +71,8 @@ for data_filename in data_files:
 
 		data_path = os.path.join(unprocessed_path, data_filename)
 		meta_path = os.path.join(unprocessed_path, meta_files[country_code])
-		data_df = pd.read_csv(data_path, delimiter=';')
-		meta_df = pd.read_csv(meta_path, delimiter=';', usecols=lambda col: col not in cols_to_drop)
+		data_df = pd.read_csv(data_path, delimiter=';', keep_default_na=False, na_values=[''])
+		meta_df = pd.read_csv(meta_path, delimiter=';', keep_default_na=False, na_values=[''], usecols=lambda col: col not in cols_to_drop)
 
 		if not meta_df.empty:
 			step3 += 1
@@ -120,7 +120,7 @@ for data_filename in data_files:
 						filtered_df['variable'].isin(public_spending_total)
 					)
 
-					# Create a mapping to add per capita values to the rows containing totals (in currency only).
+					# Create a mapping to add percentage of national income values to the rows containing totals (in currency only).
 					pct_of_income = filtered_df[filtered_df['variable'].isin(public_spending_pct_of_income)][['year', 'shortname', 'shortage', 'value']]
 					pct_of_income_map = pct_of_income.set_index(['year', 'shortname', 'shortage'])['value'].to_dict()
 

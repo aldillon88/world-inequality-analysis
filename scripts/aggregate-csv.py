@@ -51,7 +51,7 @@ data_files.sort()
 for i, file in enumerate(data_files):
 
 	path = os.path.join(processed_path, file)
-	df = pd.read_csv(path)
+	df = pd.read_csv(path, keep_default_na=False, na_values=[''])
 	col_check_set.add(len(df.columns))
 		
 	if set(df.columns) == set(expected_cols):
