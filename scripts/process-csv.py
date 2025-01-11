@@ -129,6 +129,18 @@ for data_filename in data_files:
 						filtered_df['variable'].isin(public_spending_total)
 					)
 
+					#################
+					# Create a mapping to add percentage of gdp values to the rows containing totals (in currency only).
+					gdp = filtered_df[filtered_df['variable'] == 'mgdproi999'][['year', 'value']].copy()
+					gdp_map = gdp.set_index('year')['value'].to_dict()
+
+					filtered_df.loc[:, 'value_pct_gdp'] = np.where(
+						filtered_df['variable'].isin(variables_for_conversion['variable']),
+						filtered_df['value'] / filtered_df['year'].map(gdp_map),
+						None
+					)
+					#################
+
 					filtered_df_trimmed = filtered_df[~filtered_df['variable'].isin(ps_pc_pct_combined)].drop(columns=['key', 'percentile'])
 					
 					filtered_df_trimmed.to_csv(os.path.join(processed_path, f"{country_code}.csv"), index=False)

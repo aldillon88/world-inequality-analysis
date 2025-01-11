@@ -37,7 +37,8 @@ expected_cols = [
 	'region',
 	'subregion',
     'value_usd_per_capita',
-	'value_pct_national_income'
+	'value_pct_national_income',
+	'value_pct_gdp'
 	]
 
 col_check_set = set()
