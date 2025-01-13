@@ -1,3 +1,5 @@
 .DS_Store
 inequality-venv
 data
+configs
+.env
