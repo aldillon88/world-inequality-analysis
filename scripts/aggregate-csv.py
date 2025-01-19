@@ -48,6 +48,8 @@ col_check_dict = {'failed_country' : []}
 files = os.listdir(processed_path)
 data_files = [file for file in files if re.match(pattern=source_csv_pattern, string=file)]
 data_files.sort()
+data_files.remove('AU.csv')
+data_files.insert(0, 'AU.csv')
 
 for i, file in enumerate(data_files):
 
