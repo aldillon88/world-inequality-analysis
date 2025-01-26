@@ -1,12 +1,8 @@
-//import { createClient } from '@supabase/supabase-js';
-import dotenv from 'dotenv';
-
-// Load environment variables from .env file
-dotenv.config();
+import { createClient } from '@supabase/supabase-js';
 
 // Access the Supabase credentials from process.env
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_KEY;
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_KEY;
 
 // Initialize Supabase client
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -23,9 +19,3 @@ export async function fetchDataFromTable(tableName) {
         return [];
     }
 }
-
-// Call the function to fetch and log data
-//(async () => {
-//    const result = await fetchDataFromTable('defense_top10_value_pct_gdp_2023');
-//    console.log(result);
-//})();
