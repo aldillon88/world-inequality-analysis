@@ -1,8 +1,25 @@
 import { fetchDataFromTable } from './api/supabase.js';
 
-async function renderCharts() {
-    // Fetch data from Supabase
-    const data = await fetchDataFromTable('defense_top10_value_pct_gdp_2023');
+// Fetch data for charts
+// Separate data fetching
+async function fetchData() {
+    try {
+        const data1 = await fetchDataFromTable('defense_top10_value_pct_gdp_2023');
+        const data2 = await fetchDataFromTable('defense_top10_value_usd_per_capita_2023');
+        const data3 = await fetchDataFromTable('defense_top10_value_ppp_2023');
+        // ... fetch more datasets as needed
+        
+        // After fetching all data, render the charts
+        renderChart(data1, 'chart1', 'First Chart', '%');
+        renderChart(data2, 'chart2', 'Second Chart', '$');
+        renderChart(data3, 'chart3', 'Third Chart', '$');
+    } catch (error) {
+        console.error('Error fetching data:', error);
+    }
+}
+
+
+function renderChart(data, containerId, title = '', unit = '') {
 
     if (data.length === 0) {
         console.error('No data available for charting.');
@@ -10,32 +27,50 @@ async function renderCharts() {
     }
 
     // Process data (example: extract x and y values)
-    const xValues = data.map(item => item.value_pct_gdp);
-    const yValues = data.map(item => item.countryname);
-    const textValues = xValues.map(value => `${(value * 100).toFixed(1)}%`);
+    let chartData = data.map(item => ({
+        x: item.value,
+        y: item.countryname
+    }));
+
+    // Sort data by x values in ascending order
+    chartData.sort((a, b) => a.x - b.x);
+
+    // Extract sorted x and y values
+    const xValues = chartData.map(item => item.x);
+    const yValues = chartData.map(item => item.y);
+    const textValues = xValues.map(value => unit === '%' ? `${(value * 100).toFixed(1)}%` : `$${value.toFixed(2)}`);
+
+    // Determine tickformat based on unit
+    const tickformat = unit === '%' ? ',.2%' : '$,.2f';
 
     // Plotly chart
-    const chartData = [
+    const plotlyData = [
         {
             x: xValues,
             y: yValues,
             type: 'bar',
             orientation: 'h',
-            text: textValues
+            text: textValues,
+            textposition: 'auto'
         }
     ];
 
     const layout = {
-        title: 'Supabase Data Chart',
+        title: title,
         xaxis: { 
-            title: 'Percentage of GDP',
-            tickformat: ',.1%'
+            //title: 'Percentage of GDP',
+            tickformat: tickformat, // Format x-axis values as percentages
+            showticklabels: false
         },
-        //yaxis: { title: 'Y-Axis Label' }
+        yaxis: {
+            automargin: true
+        }
     };
 
-    Plotly.newPlot('chartDiv', chartData, layout);
+    Plotly.newPlot(containerId, plotlyData, layout);
 }
 
+// Initialize everything
+//fetchData();
 // Call the render function once the DOM is fully loaded
-document.addEventListener('DOMContentLoaded', renderCharts);
+document.addEventListener('DOMContentLoaded', fetchData);
