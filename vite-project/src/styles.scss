@@ -1,0 +1,35 @@
+// src/styles.scss
+
+// Define custom color variables
+$primary-color: #201E50;
+$secondary-color: #393D63;
+$background-color: #525B76;
+$text-color: #C4F1BE;
+
+// Override default colors
+body {
+    background-color: $background-color;
+    color: $text-color;
+}
+
+a {
+    color: $primary-color;
+    &:hover {
+        color: $secondary-color;
+    }
+}
+
+h1 {
+    color: $primary-color;
+}
+
+button {
+    background-color: $primary-color;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    &:hover {
+        background-color: $secondary-color;
+    }
+}

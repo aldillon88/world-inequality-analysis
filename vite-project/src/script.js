@@ -1,4 +1,5 @@
 import { fetchDataFromTable } from './api/supabase.js';
+import './styles.scss';
 
 // Fetch data for charts
 // Separate data fetching
@@ -10,16 +11,16 @@ async function fetchData() {
         // ... fetch more datasets as needed
         
         // After fetching all data, render the charts
-        renderChart(data1, 'chart1', 'First Chart', '%');
-        renderChart(data2, 'chart2', 'Second Chart', '$');
-        renderChart(data3, 'chart3', 'Third Chart', '$');
+        renderChart(data1, 'chart1', '% of GDP', ',.1%');
+        renderChart(data2, 'chart2', 'USD per Capita', '$,.0f');
+        renderChart(data3, 'chart3', 'Total Spend (PPP)', '$,.1T');
     } catch (error) {
         console.error('Error fetching data:', error);
     }
 }
 
 
-function renderChart(data, containerId, title = '', unit = '') {
+function renderChart(data, containerId, title = '', tickformat = '') {
 
     if (data.length === 0) {
         console.error('No data available for charting.');
@@ -38,10 +39,15 @@ function renderChart(data, containerId, title = '', unit = '') {
     // Extract sorted x and y values
     const xValues = chartData.map(item => item.x);
     const yValues = chartData.map(item => item.y);
-    const textValues = xValues.map(value => unit === '%' ? `${(value * 100).toFixed(1)}%` : `$${value.toFixed(2)}`);
-
-    // Determine tickformat based on unit
-    const tickformat = unit === '%' ? ',.2%' : '$,.2f';
+    const textValues = xValues.map(value => {
+        if (tickformat.includes('%')) {
+            return value !== undefined ? `${(value * 100).toFixed(1)}%` : 'N/A';
+        } else if (tickformat.includes('T')) {
+            return value !== undefined ? `$${(value / 1e9).toFixed(1)}B` : 'N/A';
+        } else {
+            return value !== undefined ? `$${Math.round(value).toLocaleString()}` : 'N/A';
+        }
+    });
 
     // Plotly chart
     const plotlyData = [
@@ -51,26 +57,41 @@ function renderChart(data, containerId, title = '', unit = '') {
             type: 'bar',
             orientation: 'h',
             text: textValues,
-            textposition: 'auto'
+            textposition: 'auto',
+            marker: {
+                color: '#C4F1BE'
+            }
         }
     ];
 
     const layout = {
         title: title,
+        font: {
+            color: '#FFFFFF'
+        },
         xaxis: { 
             //title: 'Percentage of GDP',
             tickformat: tickformat, // Format x-axis values as percentages
-            showticklabels: false
+            showticklabels: false,
+            showgrid: false
         },
         yaxis: {
-            automargin: true
-        }
+            automargin: true,
+            showgrid: false
+        },
+        margin: {
+            l: 20,
+            r: 10,
+            t: 50,
+            b: 40
+        },
+        plot_bgcolor: '#525B76',
+        paper_bgcolor: '#525B76'
     };
 
     Plotly.newPlot(containerId, plotlyData, layout);
 }
 
 // Initialize everything
-//fetchData();
 // Call the render function once the DOM is fully loaded
 document.addEventListener('DOMContentLoaded', fetchData);
