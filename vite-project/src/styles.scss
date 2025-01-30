@@ -8,7 +8,7 @@ $text-color: #C4F1BE;
 
 // Override default colors
 body {
-    background-color: $background-color;
+    background-color: $primary-color;
     color: $text-color;
 }
 
@@ -20,7 +20,7 @@ a {
 }
 
 h1 {
-    color: $primary-color;
+    color: $text-color;
 }
 
 button {
@@ -32,4 +32,8 @@ button {
     &:hover {
         background-color: $secondary-color;
     }
+}
+
+.bg-custom {
+    background-color: $background-color;
 }
