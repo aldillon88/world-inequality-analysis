@@ -79,6 +79,8 @@ function renderChart(data, containerId, title = '', tickformat = '') {
             automargin: true,
             showgrid: false
         },
+        autosize: true,
+        height: 400,
         margin: {
             l: 20,
             r: 10,
