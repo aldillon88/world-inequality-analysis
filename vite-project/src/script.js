@@ -91,7 +91,12 @@ function renderChart(data, containerId, title = '', tickformat = '') {
         paper_bgcolor: '#525B76'
     };
 
-    Plotly.newPlot(containerId, plotlyData, layout);
+    const config = {
+        responsive: true,
+        displayModeBar: false
+    };
+
+    Plotly.newPlot(containerId, plotlyData, layout, config);
 }
 
 // Initialize everything
